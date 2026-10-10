@@ -47,7 +47,19 @@ window.HB = window.HB || {};
   function playWelcome(fromStart) {
     if (fromStart) song.currentTime = 0;
     const p = song.play();
-    if (p && p.catch) p.catch(() => setSongBtn(false));
+    // if a phone still blocks it, make the Replay button wiggle so it's obvious
+    if (p && p.catch) p.catch(() => { setSongBtn(false); songBtn.classList.add("nudge"); });
+  }
+  songBtn.addEventListener("click", () => songBtn.classList.remove("nudge"));
+  /* Called from inside the password keypress/tap (a user gesture): a silent
+     play+pause "unlocks" the <audio> element on iOS so the later, delayed
+     playWelcome() is allowed. */
+  function primeSong() {
+    if (HB.audio.isMuted()) return;
+    song.muted = true;
+    const p = song.play();
+    const done = () => { song.pause(); song.currentTime = 0; song.muted = HB.audio.isMuted(); };
+    if (p && p.then) p.then(done, done); else done();
   }
   songBtn.addEventListener("click", () => {
     if (!song.paused) { song.pause(); return; }
@@ -273,7 +285,9 @@ window.HB = window.HB || {};
     "Blow out the candles!",
     "Tap the sky for sparkle bursts",
     "Tap the F-14 for a barrel roll!",
-    "Arrow keys walk the pup, space jumps, J calls the jet",
+    ...(window.matchMedia("(pointer: coarse)").matches
+      ? ["Tap high in the sky for sparkles"]
+      : ["Arrow keys walk the pup, space jumps, J calls the jet"]),
     "The pup naps if you go quiet...",
     "Psst... the sun is ticklish",
     "Finish every party goal for a special reward",
@@ -292,7 +306,7 @@ window.HB = window.HB || {};
   function announce(msg) { live.textContent = msg; }
 
   HB.ui = {
-    openCard, updateGoals, announce, unlockReward,
+    openCard, updateGoals, announce, unlockReward, primeSong,
     songPlaying: () => !song.paused,
   };
 })(window.HB);

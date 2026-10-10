@@ -27,7 +27,11 @@
   const ctx = canvas.getContext("2d");
   const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const LH = 120;              // logical height (fixed)
+  const LH = 120;              // logical WORLD height (fixed; everything is laid out in it)
+  let SKY = 0;                 // extra sky rows above the world on tall (portrait) screens
+  let CH = LH;                 // canvas height = LH + SKY
+  // fingers are less precise than mice: grow tap boxes on touch screens
+  const TOUCH = window.matchMedia("(pointer: coarse)").matches ? 3 : 0;
   let LW = 200;                // logical width (adapts to aspect ratio)
   const GROUND = LH - 20;      // first grass row
   const FEET = GROUND + 6;     // where things "stand"
@@ -112,10 +116,11 @@
     buildCandles();
 
     const r = seeded(7);
-    if (!clouds.length)
-      clouds = Array.from({ length: Math.max(3, Math.round(LW / 55)) }, (_, i) => ({
-        x: r() * LW, y: 6 + Math.floor(r() * 34), small: i % 2 === 1, speed: 1.5 + r() * 2.5,
-      }));
+    const prevX = clouds.map((c) => c.x);
+    clouds = Array.from({ length: Math.max(3, Math.round(LW / 55)) + Math.round(SKY / 30) }, (_, i) => ({
+      x: r() * LW, y: 6 + Math.floor(r() * 34) - Math.floor(r() * SKY * 0.85), small: i % 2 === 1, speed: 1.5 + r() * 2.5,
+    }));
+    clouds.forEach((c, i) => { if (prevX[i] != null) c.x = prevX[i]; }); // no jump on resize
 
     flags = [];
     const flagCols = [["p", "m"], ["Y", "O"], ["S", "B"], ["L", "G"], ["g", "D"]];
@@ -420,7 +425,7 @@
     jet = {
       dir, text, bw, speed, t: 0, roll: 0, barked: false,
       x: dir > 0 ? -JET_W - 2 : LW + 2,
-      y: rand(18, 34),
+      y: rand(18, 34) - Math.round(SKY * 0.5), // use the extra sky on tall screens
     };
     sfx.jet(clamp((LW + JET_W * 2) / speed, 2.5, 5));
     return true;
@@ -787,13 +792,13 @@
     if (state.partyT > 0) {
       state.partyT -= dt;
       state.autoFwT -= dt;
-      if (state.autoFwT <= 0) { state.autoFwT = rand(0.35, 0.7); launch(rand(16, LW - 16), rand(10, 44)); }
+      if (state.autoFwT <= 0) { state.autoFwT = rand(0.35, 0.7); launch(rand(16, LW - 16), rand(10 - SKY * 0.7, 44)); }
     }
 
     if (!REDUCED) {
       for (const b of balloons) b.y += b.vy * dt;
       for (let i = balloons.length - 1; i >= 0; i--) {
-        if (balloons[i].y < -24) {
+        if (balloons[i].y < -24 - SKY) {
           const b = balloons.splice(i, 1)[0];
           if (b.ambient) spawnBalloon();
         }
@@ -886,6 +891,12 @@
   /* ------------------------------------------------------------------ 7 */
   function render() {
     const t = state.t;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (SKY) { // extra sky on tall screens: continues the top band of the gradient
+      ctx.fillStyle = P.N;
+      ctx.fillRect(0, 0, LW, SKY);
+    }
+    ctx.translate(0, SKY); // everything below is drawn in world coordinates
     ctx.drawImage(bg, 0, 0);
 
     // clouds drift behind everything
@@ -966,10 +977,6 @@
     }
     renderBubble();
 
-    // HUD
-    font.text(ctx, `*${state.goals.size}/${GOALS.length}`, LW - 2, 2, { color: "Y", align: "right" });
-    if (state.pops) font.text(ctx, `POP ${state.pops}`, 2, 2, { color: "p" });
-
     const b = banners[0];
     if (b) {
       const s = b.big ? 2 : 1;
@@ -977,6 +984,11 @@
       const y = Math.round(54 - bounce * 8); // below the F-14 flight band (y 18-50)
       if (!(b.t > b.dur - 0.3 && Math.floor(b.t * 20) % 2)) font.text(ctx, b.text, LW / 2, y, { color: b.color, scale: s, align: "center" });
     }
+
+    // HUD pinned to the top of the canvas (not the world)
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    font.text(ctx, `*${state.goals.size}/${GOALS.length}`, LW - 2, 2, { color: "Y", align: "right" });
+    if (state.pops) font.text(ctx, `POP ${state.pops}`, 2, 2, { color: "p" });
   }
 
   function drawParticles(layer) {
@@ -1014,15 +1026,20 @@
   function resize() {
     const frame = canvas.parentElement.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
-    const pad = 52; // room for the pixel frame drawn with box-shadow + margin
+    // room for the pixel frame drawn with box-shadow + margin (thinner on phones)
+    const pad = window.matchMedia("(max-width: 560px)").matches ? 22 : 52;
     const aw = Math.max(100, frame.width - pad), ah = Math.max(80, frame.height - pad);
     LW = clamp(Math.round(LH * (aw / ah)), 160, 256);
     let scale = Math.floor(Math.min((aw * dpr) / LW, (ah * dpr) / LH));
     if (scale < 1) scale = 1;
+    // Portrait / tall space: keep the integer scale set by the width and grow
+    // the canvas upward with extra sky instead of leaving empty page.
+    CH = clamp(Math.floor((ah * dpr) / scale), LH, 220);
+    SKY = CH - LH;
     canvas.width = LW;
-    canvas.height = LH;
+    canvas.height = CH;
     canvas.style.width = `${(LW * scale) / dpr}px`;
-    canvas.style.height = `${(LH * scale) / dpr}px`;
+    canvas.style.height = `${(CH * scale) / dpr}px`;
     ctx.imageSmoothingEnabled = false;
     layout();
     render();
@@ -1030,9 +1047,10 @@
 
   function toWorld(e) {
     const r = canvas.getBoundingClientRect();
-    return { x: ((e.clientX - r.left) / r.width) * LW, y: ((e.clientY - r.top) / r.height) * LH };
+    return { x: ((e.clientX - r.left) / r.width) * LW, y: ((e.clientY - r.top) / r.height) * CH - SKY };
   }
-  const inBox = (x, y, bx, by, bw, bh) => x >= bx && x < bx + bw && y >= by && y < by + bh;
+  const inBox = (x, y, bx, by, bw, bh) =>
+    x >= bx - TOUCH && x < bx + bw + TOUCH && y >= by - TOUCH && y < by + bh + TOUCH;
 
   canvas.addEventListener("pointerdown", (e) => {
     HB.audio.ensure();
@@ -1055,7 +1073,7 @@
     if (inBox(x, y, dog.x - 2, dogY() - 7, DOG_W + 4, 25)) return petDog();
     if (inBox(x, y, L.cake.x - 2, L.cake.y - 2, 28, 30)) { floatText(pick(["NOT YET!", "AFTER THE WISH", "MMM CAKE"]), L.cake.x + 12, L.cake.y - 12, "p"); return; }
     if (y < GROUND - 8) {
-      launch(x, Math.max(6, y));
+      launch(x, Math.max(6 - SKY, y));
       state.fireworks++;
       if (state.fireworks >= 5) unlock("fw");
       return;
@@ -1084,14 +1102,14 @@
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") keys[e.key] = true;
     if (e.key === " " || e.key === "ArrowUp") { if (dog.state === "sleep") petDog(); else jump(); }
     if (e.key === "j" || e.key === "J") flyby();
-    if (e.key === "f" || e.key === "F") { launch(rand(16, LW - 16), rand(10, 44)); state.fireworks++; if (state.fireworks >= 5) unlock("fw"); }
+    if (e.key === "f" || e.key === "F") { launch(rand(16, LW - 16), rand(10 - SKY * 0.7, 44)); state.fireworks++; if (state.fireworks >= 5) unlock("fw"); }
   });
   window.addEventListener("keyup", (e) => { keys[e.key] = false; });
   window.addEventListener("blur", () => { keys.ArrowLeft = keys.ArrowRight = false; });
 
   function snapshot() {
     const k = 6, c = document.createElement("canvas");
-    c.width = LW * k; c.height = LH * k;
+    c.width = LW * k; c.height = CH * k;
     const x = c.getContext("2d");
     x.imageSmoothingEnabled = false;
     x.drawImage(canvas, 0, 0, c.width, c.height);
@@ -1104,7 +1122,7 @@
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     });
     sfx.click();
-    particles.push({ kind: "flash", x: LW / 2, y: LH / 2, life: 0.08, max: 0.08 });
+    particles.push({ kind: "flash", x: LW / 2, y: LH / 2 - SKY / 2, life: 0.08, max: 0.08 });
   }
 
   /* fixed-step loop */
@@ -1130,7 +1148,7 @@
     GOALS, goals: () => state.goals,
     blowAll, relight, snapshot, flyby,
     scheduleFlyby: (sec) => { state.jetT = sec; },
-    fireworks: () => { for (let i = 0; i < 4; i++) setTimeout(() => launch(rand(16, LW - 16), rand(10, 44)), i * 200); state.fireworks += 4; if (state.fireworks >= 5) unlock("fw"); },
+    fireworks: () => { for (let i = 0; i < 4; i++) setTimeout(() => launch(rand(16, LW - 16), rand(10 - SKY * 0.7, 44)), i * 200); state.fireworks += 4; if (state.fireworks >= 5) unlock("fw"); },
     debug: { state, dog, ball, throwBall, jet: () => jet, rollJet, candles: () => candles, gifts: () => gifts, balloons, celebrate, unlock },
   };
 })(window.HB);

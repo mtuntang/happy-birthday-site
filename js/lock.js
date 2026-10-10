@@ -43,11 +43,14 @@ window.HB = window.HB || {};
   if (!isLocked()) { root.remove(); return; }
 
   const P = HB.PALETTE, font = HB.font;
+  const TOUCHY = window.matchMedia("(pointer: coarse)").matches;
   const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const canvas = document.getElementById("lock-canvas");
   const ctx = canvas.getContext("2d");
   const msg = document.getElementById("lock-msg");
   const countEl = document.getElementById("lock-count");
+
+  if (TOUCHY) msg.textContent = msg.textContent.replace("CLICK IT!", "TAP IT!");
 
   // keep everything behind the lock unreachable (focus, clicks, screen readers)
   const behind = [document.querySelector(".scene"), document.getElementById("start")];
@@ -59,12 +62,19 @@ window.HB = window.HB || {};
   ctx.imageSmoothingEnabled = false;
   function fitCanvas() {
     const dpr = window.devicePixelRatio || 1;
-    const maxW = Math.min(window.innerWidth * 0.9, 600), maxH = window.innerHeight * 0.55;
+    // height left over after the title, message and countdown (+ gaps and the
+    // canvas's pixel frame), so short landscape phones don't overlap
+    const others = ["lock-title", "lock-msg", "lock-count"]
+      .map((id) => document.getElementById(id))
+      .reduce((h, el) => h + (el && el.offsetParent ? el.offsetHeight : 0), 0);
+    const maxW = Math.min(window.innerWidth * 0.9, 600);
+    const maxH = Math.min(window.innerHeight * 0.62, window.innerHeight - others - 110);
     const k = Math.max(1, Math.floor(Math.min((maxW * dpr) / LW, (maxH * dpr) / LH)));
     canvas.style.width = `${(LW * k) / dpr}px`;
     canvas.style.height = `${(LH * k) / dpr}px`;
   }
   window.addEventListener("resize", fitCanvas);
+  window.addEventListener("orientationchange", () => setTimeout(fitCanvas, 200));
   fitCanvas();
 
   const BOX = { x: 34, y: 50, w: 52, h: 38 };  // box body
@@ -417,6 +427,10 @@ window.HB = window.HB || {};
     const guess = kbInput.value.trim().toUpperCase(); // exact match: "COCONUT"
     if (fnv1a(guess) === ANSWER_HASH) {
       bypassed = true;
+      // iPhones only allow audio started from inside a tap/keypress; the song
+      // starts ~5 s later, so unlock the audio NOW while we're in the gesture
+      HB.audio.ensure();
+      if (HB.ui && HB.ui.primeSong) HB.ui.primeSong();
       kbPanel.hidden = true;
       msg.innerHTML = "<b>THE KEY FITS!</b>";
       startKey();
@@ -494,5 +508,7 @@ window.HB = window.HB || {};
   updateCount();
   if (!isDay) countTimer = setInterval(updateCount, 1000);
   requestAnimationFrame(loop);
-  canvas.focus({ preventScroll: true });
+  // focusing is for keyboard users; on phones it just draws a focus ring
+  if (!TOUCHY) canvas.focus({ preventScroll: true });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitCanvas);
 })(window.HB);

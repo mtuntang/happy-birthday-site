@@ -64,6 +64,13 @@ play.)
   cheat code for party mode
 - **Snapshot** downloads a crisp 6× PNG of the scene
 
+**Phones:** the layout adapts to portrait and landscape. In portrait the
+canvas grows taller with extra sky (the world stays the same, sparkles and
+the F-14 use the extra sky), the toolbar becomes a 3-column grid, tap targets
+are enlarged for fingers, and the password field won't trigger iOS zoom.
+Because iPhones only allow audio started from a tap, the password entry also
+"primes" the song; if a phone still blocks it, **♪ Replay song** wiggles.
+
 `prefers-reduced-motion` is respected: ambient motion (rising balloons,
 clouds, butterflies, twinkling) stops; things you trigger still respond.
 

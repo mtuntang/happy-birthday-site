@@ -213,6 +213,7 @@ body {
   cursor: pointer;
   box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--cream), 0 0 0 12px var(--ink);
 }
+#lock-canvas { margin: 12px; } /* room for the box-shadow frame so it never overlaps the text */
 #lock-canvas:focus-visible { outline: 3px dashed var(--butter); outline-offset: 16px; }
 .lock-msg {
   font-size: clamp(9px, 1.8vw, 13px);
@@ -319,6 +320,8 @@ body {
 .btn-relock { background: var(--lilac); }
 .btn-relock:hover { background: var(--lavender); }
 body.relocking .scene { opacity: 0; transition: opacity 400ms steps(4); }
+.btn.nudge { animation: nudge 0.6s steps(3) infinite; background: var(--butter); }
+@keyframes nudge { 33% { transform: rotate(-3deg); } 66% { transform: rotate(3deg); } }
 .btn-reward[aria-disabled="true"] { background: var(--lavender); color: var(--mauve); }
 .btn-reward.is-unlocked { background: var(--bubblegum); animation: glow 1.2s steps(2) infinite; }
 @keyframes glow { 50% { background: var(--butter); } }
@@ -459,6 +462,67 @@ body.relocking .scene { opacity: 0; transition: opacity 400ms steps(4); }
   .frame-mat { padding: 14px 12px; }
   .collage-grid { grid-template-columns: repeat(2, 1fr); gap: 14px 10px; }
   .polaroid.wide { grid-column: span 2; }
+}
+
+/* ------------------------------------------------------------- touch/mobile */
+/* no 300ms double-tap-zoom delay, no grey tap flash, no long-press menus on
+   the pixel canvases */
+button, .btn, a, canvas { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+#stage, #lock-canvas { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.scene, .lock {
+  padding-left: max(8px, env(safe-area-inset-left));
+  padding-right: max(8px, env(safe-area-inset-right));
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+}
+.dialog { max-height: calc(100dvh - 40px); overflow-y: auto; width: min(calc(100vw - 40px), 460px); }
+.keybox-input { font-size: 16px; } /* >=16px stops iOS zooming in on focus */
+
+/* phones (portrait) */
+@media (max-width: 560px) {
+  .scene { gap: 10px; padding-top: max(12px, env(safe-area-inset-top)); }
+  .greeting { font-size: clamp(16px, 6.4vw, 26px); }
+  .subtitle { margin-top: 4px; font-size: 8px; }
+  #stage {
+    margin: 9px;
+    box-shadow: 0 0 0 3px var(--ink), 0 0 0 6px var(--cream), 0 0 0 9px var(--ink), 6px 6px 0 9px rgba(75, 59, 87, 0.25);
+  }
+  /* toolbar becomes a tidy 3-column grid of equal buttons */
+  .toolbar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 9px 8px;
+    width: 100%;
+    padding: 0 4px;
+  }
+  .toolbar .btn { font-size: 8px; padding: 9px 4px; min-height: 36px; }
+  /* a lone button on the last row stretches across instead of hanging left */
+  .toolbar .btn:last-child:nth-child(3n+1) { grid-column: 1 / -1; }
+  .toolbar .btn:nth-last-child(2):nth-child(3n+1) { grid-column: span 1; }
+  .hint { font-size: 7px; min-height: 0; }
+  .lock { gap: 6px; }
+  #lock-canvas { margin: 9px; }
+  #lock-canvas { box-shadow: 0 0 0 3px var(--ink), 0 0 0 6px var(--cream), 0 0 0 9px var(--ink); }
+  /* key box sits near the top so the on-screen keyboard can't cover it */
+  .keybox { align-items: start; padding-top: max(10vh, env(safe-area-inset-top)); }
+  .keybox-card { width: calc(100vw - 48px); padding: 18px; }
+  .dialog { padding: 18px; font-size: 9px; }
+}
+
+/* phones held sideways: short screens, so trim everything around the canvas */
+@media (max-height: 500px) and (orientation: landscape) {
+  .scene { gap: 6px; padding-top: 6px; padding-bottom: 6px; }
+  .greeting { font-size: 16px; line-height: 1.2; }
+  .subtitle, .hint { display: none; }
+  #stage { margin: 9px; box-shadow: 0 0 0 3px var(--ink), 0 0 0 6px var(--cream), 0 0 0 9px var(--ink); }
+  .toolbar { gap: 6px; }
+  .toolbar .btn { font-size: 7px; padding: 6px 7px; }
+  .lock { gap: 2px; }
+  #lock-canvas { margin: 9px; }
+  .lock-title { font-size: 14px; }
+  .lock-msg { padding: 6px 10px; font-size: 8px; }
+  #lock-canvas:focus-visible, #stage:focus-visible { outline-offset: 2px; }
+  .lock-count { display: none; }
+  .keybox { align-items: start; padding-top: 8px; }
 }
 
 /* reduced motion: JS stops ambient motion; this kills CSS motion too */
