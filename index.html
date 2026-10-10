@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Happy Birthday!</title>
+
+  <!-- Pixel font (falls back to monospace if offline) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="scene">
+    <h1 id="greeting" class="greeting">Happy Birthday!</h1>
+
+    <!-- The dog + cake + decorations are all drawn here by script.js -->
+    <canvas id="stage" aria-label="Animated pixel dog wearing a party hat, with cake, balloons and confetti"></canvas>
+
+    <p class="hint">click the dog for confetti!</p>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

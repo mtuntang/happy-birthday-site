@@ -1,0 +1,87 @@
+/* ==========================================================================
+   Happy Birthday — pixel dog party
+   Plain CSS, no frameworks. Palette lives in :root as CSS variables.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Palette (edit these to retheme the whole page)
+   -------------------------------------------------------------------------- */
+:root {
+  --peach:     #FFD6C9;
+  --mint:      #CDEFD9;
+  --lavender:  #D9CCF2;
+  --butter:    #FFF1B8;
+  --sky:       #CFE6F7;
+  --blush:     #FFC8DD;
+  --brown:     #B98E78; /* soft outlines */
+
+  --bg:        var(--sky);
+  --ink:       var(--brown);
+  --font-pixel: "Press Start 2P", monospace;
+}
+
+/* Reset + page basics */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Subtle pixel checker behind everything */
+body {
+  min-height: 100vh;
+  overflow: hidden; /* everything fits one viewport */
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(45deg, rgba(255, 255, 255, 0.35) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255, 255, 255, 0.35) 25%, transparent 25%);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px;
+  font-family: var(--font-pixel);
+  color: var(--ink);
+}
+
+/* Centered single-viewport layout */
+.scene {
+  height: 100vh;
+  height: 100dvh; /* mobile safe: avoids URL-bar overflow */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(12px, 3vh, 32px);
+  padding: clamp(12px, 4vw, 32px);
+  text-align: center;
+}
+
+/* Big pixel heading */
+.greeting {
+  font-size: clamp(16px, 4.5vw, 40px);
+  line-height: 1.5;
+  text-shadow: 4px 4px 0 #ffffff88; /* hard offset = pixel style, no blur */
+  word-break: break-word;
+}
+
+/* Canvas fills the leftover space, drawn with crisp edges */
+#stage {
+  width: min(90vmin, 720px);
+  height: min(60vmin, 480px);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges; /* Firefox fallback */
+  touch-action: manipulation;
+  cursor: pointer;
+}
+
+.hint {
+  font-size: clamp(8px, 1.6vw, 12px);
+  color: var(--brown);
+  opacity: 0.8;
+}
+
+/* Respect reduced motion: JS stops animating; this kills CSS motion too */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
