@@ -3,28 +3,131 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffc4dd" />
   <title>Happy Birthday!</title>
 
-  <!-- Pixel font (falls back to monospace if offline) -->
+  <!-- Pixel font (falls back to monospace if offline; the canvas uses its own bitmap font) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
-    rel="stylesheet"
-  />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Date lock: shown until Oct 12 2026 (see js/lock.js), removed after -->
+  <div id="lock" class="lock" role="dialog" aria-modal="true" aria-labelledby="lock-title">
+    <h2 id="lock-title" class="lock-title">A PRESENT FOR YOU!</h2>
+    <canvas id="lock-canvas" tabindex="0" aria-label="A PIXEL-ART PRESENT WRAPPED IN CHAINS WITH A PADLOCK, AND A SMALL KEY BOX BESIDE IT. CLICK THE PRESENT, OR CLICK THE KEY BOX (OR PRESS K) TO ENTER A PASSWORD."></canvas>
+    <p id="lock-msg" class="lock-msg">IT'S LOCKED UP TIGHT... CLICK IT! (PSST, THERE'S A KEY BOX)</p>
+    <p id="lock-count" class="lock-count"></p>
+
+    <!-- early-bypass password popup for the key box -->
+    <div id="keybox" class="keybox" hidden>
+      <form id="keybox-form" class="keybox-card" role="dialog" aria-modal="true" aria-labelledby="keybox-title">
+        <h3 id="keybox-title">KEY BOX</h3>
+        <p id="keybox-hint" class="keybox-hint"></p>
+        <input id="keybox-input" class="keybox-input" type="text" maxlength="20" autocomplete="off"
+          autocapitalize="characters" spellcheck="false" aria-label="PASSWORD" placeholder="PASSWORD" />
+        <p id="keybox-err" class="keybox-err" aria-live="polite"></p>
+        <div class="row">
+          <button type="submit" class="btn btn-pink">UNLOCK</button>
+          <button type="button" id="keybox-cancel" class="btn">CANCEL</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Title screen: the click here is the user gesture that lets the welcome song play -->
+  <div id="start" class="start" role="dialog" aria-modal="true" aria-labelledby="start-title">
+    <div class="start-card">
+      <p class="start-paw" aria-hidden="true">♥ ♥ ♥</p>
+      <h2 id="start-title" class="start-title">Happy<br />Birthday!</h2>
+      <p id="start-name" class="start-name">a pixel party</p>
+      <button id="btn-start" class="btn btn-big" type="button">▶ Press start</button>
+      <p class="start-note">(turn your sound on!)</p>
+    </div>
+  </div>
+
   <main class="scene">
-    <h1 id="greeting" class="greeting">Happy Birthday!</h1>
+    <header class="header">
+      <h1 id="greeting" class="greeting">Happy Birthday!</h1>
+      <p id="subtitle" class="subtitle">a tiny pixel party, just for you</p>
+    </header>
 
-    <!-- The dog + cake + decorations are all drawn here by script.js -->
-    <canvas id="stage" aria-label="Animated pixel dog wearing a party hat, with cake, balloons and confetti"></canvas>
+    <!-- Everything in here is drawn by js/party.js -->
+    <div class="stage-frame">
+      <canvas id="stage" tabindex="0"
+        aria-label="Pixel-art birthday party: a peach puppy in a party hat, a cake with candles, presents, balloons and bunting under a smiling sun. An F-14 Tomcat flies by towing a birthday banner. Click things to interact; arrow keys walk the pup, space jumps."></canvas>
+    </div>
 
-    <p class="hint">click the dog for confetti!</p>
+    <nav class="toolbar" aria-label="Party controls">
+      <button id="btn-blow" class="btn" type="button">Blow candles</button>
+      <button id="btn-relight" class="btn" type="button">Relight</button>
+      <button id="btn-fw" class="btn" type="button">Sparkles!</button>
+      <button id="btn-jet" class="btn" type="button">F-14 flyby</button>
+      <button id="btn-song" class="btn btn-pink" type="button" aria-pressed="false">♪ Replay song</button>
+      <button id="btn-sound" class="btn" type="button" aria-pressed="true">Sound: on</button>
+      <button id="btn-snap" class="btn" type="button">Snapshot</button>
+      <button id="btn-goals" class="btn btn-gold" type="button">★ 0/7</button>
+      <button id="btn-reward" class="btn btn-reward" type="button" aria-disabled="true">Reward: locked</button>
+      <button id="btn-relock" class="btn btn-relock" type="button" hidden>Relock</button>
+    </nav>
+
+    <p id="hint" class="hint"></p>
+    <p id="live" class="sr-only" aria-live="polite"></p>
   </main>
 
-  <script src="script.js"></script>
+  <!-- Wish card (opens after the candles are blown out) -->
+  <dialog id="card" class="dialog card">
+    <p class="card-deco" aria-hidden="true">★ ♥ ★</p>
+    <h2 id="card-title">Happy Birthday!</h2>
+    <p id="card-msg"></p>
+    <p id="card-from" class="card-from"></p>
+    <button class="btn btn-pink" type="button" data-close>Keep partying</button>
+  </dialog>
+
+  <!-- Goals (also pops up 3 s after the party starts to explain the reward) -->
+  <dialog id="goals" class="dialog">
+    <h2>Party goals</h2>
+    <p class="goal-intro">Finish <b>all</b> the party goals to unlock a special birthday reward!</p>
+    <ul id="goal-list" class="goal-list"></ul>
+    <div id="reward-row" class="reward-row">
+      <span class="reward-gift" aria-hidden="true"></span>
+      <span id="reward-status">Reward: locked</span>
+    </div>
+    <div class="row">
+      <button id="btn-open-reward" class="btn btn-pink" type="button" hidden>♥ Open reward</button>
+      <button class="btn" type="button" data-close>Let's party!</button>
+    </div>
+  </dialog>
+
+  <!-- Final reward: photo + gif collage in a pixel photo frame -->
+  <dialog id="collage" class="collage-dialog" aria-labelledby="collage-title">
+    <div class="photo-frame">
+      <span class="frame-heart tl" aria-hidden="true"></span>
+      <span class="frame-heart tr" aria-hidden="true"></span>
+      <span class="frame-heart bl" aria-hidden="true"></span>
+      <span class="frame-heart br" aria-hidden="true"></span>
+      <div class="frame-mat">
+        <h2 id="collage-title" class="collage-title">Happy Birthday ♥</h2>
+        <div id="collage-grid" class="collage-grid"></div>
+        <p id="collage-note" class="collage-note">you did every party goal. here's to you!</p>
+      </div>
+      <div class="frame-plaque">
+        <a id="btn-save-gif" class="btn btn-gold" href="assets/happy-birthday-card.gif" download="happy-birthday-card.gif">⬇ Save as GIF</a>
+        <button class="btn btn-pink" type="button" data-close>Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <audio id="welcome-song" src="kojima-bday-mgsv-pp.m4a" preload="auto"></audio>
+
+  <!-- Plain scripts (not modules) so the page also works from file:// -->
+  <script src="js/sprites.js"></script>
+  <script src="js/font.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/lock.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/party.js"></script>
 </body>
 </html>

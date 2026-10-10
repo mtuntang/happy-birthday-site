@@ -1,87 +1,467 @@
 /* ==========================================================================
-   Happy Birthday — pixel dog party
-   Plain CSS, no frameworks. Palette lives in :root as CSS variables.
+   Happy Birthday — cute pastel pixel pup party
+   Plain CSS, no frameworks. Palette mirrors PALETTE in js/sprites.js.
    ========================================================================== */
 
-/* --------------------------------------------------------------------------
-   Palette (edit these to retheme the whole page)
-   -------------------------------------------------------------------------- */
 :root {
-  --peach:     #FFD6C9;
-  --mint:      #CDEFD9;
-  --lavender:  #D9CCF2;
-  --butter:    #FFF1B8;
-  --sky:       #CFE6F7;
-  --blush:     #FFC8DD;
-  --brown:     #B98E78; /* soft outlines */
+  --ink:      #4b3b57; /* soft plum outlines (never black) */
+  --mauve:    #a27fae;
+  --salmon:   #f4978e;
+  --peach:    #ffc09a;
+  --butter:   #ffeaa0;
+  --pistachio:#d2f7b8;
+  --mint:     #a5e3a9;
+  --periwinkle:#b9c6ff;
+  --cornflower:#8fa8f5;
+  --baby:     #ade0ff;
+  --ice:      #dcfbff;
+  --cream:    #fffaf2;
+  --lavender: #cdbdf0;
+  --lilac:    #c0a9d6;
+  --bubblegum:#ffc4dd;
+  --rose:     #f290b8;
 
-  --bg:        var(--sky);
-  --ink:       var(--brown);
-  --font-pixel: "Press Start 2P", monospace;
+  --font-pixel: "Press Start 2P", ui-monospace, monospace;
 }
 
-/* Reset + page basics */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+[hidden] { display: none !important; }
 
-/* Subtle pixel checker behind everything */
+/* pastel gingham with a tiny pixel-heart pattern */
 body {
   min-height: 100vh;
-  overflow: hidden; /* everything fits one viewport */
-  background-color: var(--bg);
+  min-height: 100dvh;
+  background-color: var(--bubblegum);
   background-image:
-    linear-gradient(45deg, rgba(255, 255, 255, 0.35) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(255, 255, 255, 0.35) 25%, transparent 25%);
-  background-size: 16px 16px;
-  background-position: 0 0, 8px 8px;
+    linear-gradient(90deg, rgba(255, 250, 242, 0.45) 50%, transparent 50%),
+    linear-gradient(rgba(255, 250, 242, 0.45) 50%, transparent 50%);
+  background-size: 24px 24px;
   font-family: var(--font-pixel);
+  color: var(--ink);
+  -webkit-font-smoothing: none;
+}
+
+.scene {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(8px, 1.8vh, 18px);
+  padding: clamp(10px, 2.5vh, 24px) clamp(8px, 3vw, 28px);
+  text-align: center;
+}
+
+.header { flex: none; }
+
+.greeting {
+  font-size: clamp(16px, 4.2vw, 40px);
+  line-height: 1.4;
+  color: var(--cream);
+  /* stacked hard shadows = chunky pixel outline + drop */
+  text-shadow:
+    -3px 0 0 var(--ink), 3px 0 0 var(--ink), 0 -3px 0 var(--ink), 0 3px 0 var(--ink),
+    6px 6px 0 var(--rose);
+  word-break: break-word;
+}
+
+.subtitle {
+  margin-top: 8px;
+  font-size: clamp(8px, 1.4vw, 12px);
   color: var(--ink);
 }
 
-/* Centered single-viewport layout */
-.scene {
-  height: 100vh;
-  height: 100dvh; /* mobile safe: avoids URL-bar overflow */
+/* canvas frame: the JS sizes the canvas to an integer multiple inside it */
+.stage-frame {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+#stage {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  touch-action: manipulation;
+  cursor: pointer;
+  background: var(--baby);
+  box-shadow:
+    0 0 0 4px var(--ink),
+    0 0 0 8px var(--cream),
+    0 0 0 12px var(--ink),
+    10px 10px 0 12px rgba(75, 59, 87, 0.25);
+  margin: 14px;
+}
+#stage:focus-visible { outline: 3px dashed var(--cornflower); outline-offset: 16px; }
+
+/* ---------------------------------------------------------------- buttons */
+.toolbar {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  max-width: 980px;
+}
+
+.btn {
+  font: 9px/1.2 var(--font-pixel);
+  color: var(--ink);
+  background: var(--cream);
+  border: 0;
+  padding: 9px 11px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  /* pixel border with notched corners + bevel */
+  box-shadow:
+    0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink),
+    -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink),
+    inset -3px -3px 0 0 var(--lavender),
+    inset 3px 3px 0 0 #fff;
+  transition: transform 80ms steps(2);
+}
+.btn:hover { background: var(--ice); }
+.btn:active { transform: translateY(2px); }
+.btn:focus-visible { outline: 3px dashed var(--cornflower); outline-offset: 5px; }
+.btn[aria-pressed="true"] { background: var(--pistachio); }
+.btn-pink { background: var(--bubblegum); }
+.btn-pink:hover { background: #ffd6e8; }
+.btn-gold { background: var(--butter); }
+.btn-big { font-size: clamp(11px, 2.4vw, 16px); padding: 14px 18px; }
+
+.hint {
+  flex: none;
+  min-height: 1.6em;
+  font-size: clamp(7px, 1.2vw, 10px);
+  color: var(--ink);
+  opacity: 0.85;
+  transition: opacity 200ms;
+}
+.hint.swap { opacity: 0; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- date lock */
+.lock {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(12px, 3vh, 32px);
-  padding: clamp(12px, 4vw, 32px);
+  gap: 18px;
+  padding: 16px;
   text-align: center;
+  background: repeating-linear-gradient(-45deg, var(--lavender) 0 14px, var(--lilac) 14px 28px);
+  transition: opacity 500ms steps(5);
 }
+.lock.is-open { opacity: 0; pointer-events: none; }
+.lock, .lock input { text-transform: uppercase; }
 
-/* Big pixel heading */
-.greeting {
-  font-size: clamp(16px, 4.5vw, 40px);
-  line-height: 1.5;
-  text-shadow: 4px 4px 0 #ffffff88; /* hard offset = pixel style, no blur */
-  word-break: break-word;
+/* key box password popup */
+.keybox {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(75, 59, 87, 0.45);
 }
-
-/* Canvas fills the leftover space, drawn with crisp edges */
-#stage {
-  width: min(90vmin, 720px);
-  height: min(60vmin, 480px);
+.keybox-card {
+  width: min(92vw, 420px);
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  background: var(--cream);
+  font-size: 10px;
+  line-height: 1.8;
+  box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--peach), 0 0 0 12px var(--ink), 10px 10px 0 12px rgba(75, 59, 87, 0.3);
+}
+.keybox-card h3 { font-size: 14px; color: var(--salmon); }
+.keybox-hint { color: var(--mauve); }
+.keybox-input {
+  font: 14px/1.6 var(--font-pixel);
+  letter-spacing: 2px;
+  color: var(--ink);
+  background: #fff;
+  border: 3px solid var(--ink);
+  padding: 8px;
+  width: 100%;
+}
+.keybox-input:focus { outline: 3px solid var(--bubblegum); }
+.keybox-err { min-height: 1.8em; color: var(--rose); }
+.keybox-card.wrong { animation: kb-shake 360ms steps(6); }
+@keyframes kb-shake { 20% { transform: translateX(-8px); } 40% { transform: translateX(8px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(4px); } }
+.lock-title {
+  font-size: clamp(16px, 4vw, 32px);
+  line-height: 1.4;
+  color: var(--bubblegum);
+  text-shadow:
+    -3px 0 0 var(--ink), 3px 0 0 var(--ink), 0 -3px 0 var(--ink), 0 3px 0 var(--ink),
+    5px 5px 0 var(--mauve);
+}
+#lock-canvas {
   image-rendering: pixelated;
-  image-rendering: crisp-edges; /* Firefox fallback */
-  touch-action: manipulation;
+  image-rendering: crisp-edges;
   cursor: pointer;
+  box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--cream), 0 0 0 12px var(--ink);
+}
+#lock-canvas:focus-visible { outline: 3px dashed var(--butter); outline-offset: 16px; }
+.lock-msg {
+  font-size: clamp(9px, 1.8vw, 13px);
+  line-height: 1.8;
+  max-width: 34em;
+  padding: 10px 14px;
+  background: var(--cream);
+  box-shadow: 0 0 0 3px var(--ink);
+}
+.lock-msg b { color: var(--rose); }
+.lock-msg.pulse { animation: lock-pulse 400ms steps(4); }
+@keyframes lock-pulse { 30% { transform: scale(1.08); background: var(--butter); } }
+.lock-count { font-size: clamp(8px, 1.5vw, 11px); color: var(--cream); text-shadow: 2px 2px 0 var(--ink); }
+
+/* ----------------------------------------------------------- title screen */
+.start {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background:
+    repeating-linear-gradient(0deg, var(--baby) 0 8px, var(--ice) 8px 16px);
+  transition: opacity 350ms steps(4);
+}
+.start.is-hidden { opacity: 0; pointer-events: none; }
+.start[hidden] { display: none; }
+.start-card {
+  background: var(--cream);
+  padding: clamp(20px, 5vw, 40px);
+  max-width: 460px;
+  box-shadow:
+    0 0 0 4px var(--ink), 0 0 0 8px var(--bubblegum), 0 0 0 12px var(--ink),
+    12px 12px 0 12px rgba(75, 59, 87, 0.25);
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+}
+.start-paw { color: var(--rose); font-size: 14px; animation: bob 1s steps(2) infinite; }
+.start-title {
+  font-size: clamp(22px, 6vw, 40px);
+  line-height: 1.35;
+  color: var(--butter);
+  text-shadow:
+    -3px 0 0 var(--ink), 3px 0 0 var(--ink), 0 -3px 0 var(--ink), 0 3px 0 var(--ink),
+    5px 5px 0 var(--salmon);
+}
+.start-name { font-size: 11px; color: var(--mauve); }
+.start-note { font-size: 8px; color: var(--mauve); }
+#btn-start { animation: blink 1.2s steps(1) infinite; }
+
+@keyframes bob { 50% { transform: translateY(-4px); } }
+@keyframes blink { 50% { background: var(--bubblegum); } }
+
+/* ---------------------------------------------------------------- dialogs */
+.dialog {
+  margin: auto;
+  border: 0;
+  padding: 24px;
+  width: min(92vw, 460px);
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-pixel);
+  font-size: 10px;
+  line-height: 1.8;
+  box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--baby), 0 0 0 12px var(--ink);
+}
+.dialog::backdrop { background: rgba(185, 198, 255, 0.7); }
+.dialog h2 { font-size: 14px; margin-bottom: 14px; color: var(--rose); }
+.dialog .btn { margin-top: 14px; }
+
+.card { text-align: center; box-shadow: 0 0 0 4px var(--ink), 0 0 0 8px var(--bubblegum), 0 0 0 12px var(--ink); }
+.card-deco { color: var(--salmon); }
+.card-from { margin-top: 12px; color: var(--mauve); }
+
+.goal-list { list-style: none; display: grid; gap: 8px; }
+.goal-list li { opacity: 0.55; }
+.goal-list li.done { opacity: 1; color: #3f8f6a; }
+
+.row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+.goal-intro { margin-bottom: 12px; color: var(--mauve); }
+.goal-intro b { color: var(--rose); }
+
+/* little pixel present drawn with box-shadow (one 3px "pixel" per shadow) */
+.reward-row {
+  display: flex; align-items: center; gap: 14px;
+  margin-top: 14px; padding: 10px 12px;
+  background: var(--ice);
+  box-shadow: 0 0 0 3px var(--ink);
+}
+.reward-row.unlocked { background: var(--bubblegum); }
+.reward-gift {
+  flex: none; width: 3px; height: 3px; margin: 0 12px 12px 0;
+  box-shadow:
+    6px 0 var(--rose), 15px 0 var(--rose),
+    0 3px var(--ink), 3px 3px var(--ink), 6px 3px var(--ink), 9px 3px var(--rose), 12px 3px var(--ink), 15px 3px var(--ink), 18px 3px var(--ink),
+    0 6px var(--ink), 3px 6px var(--butter), 6px 6px var(--butter), 9px 6px var(--rose), 12px 6px var(--butter), 15px 6px var(--butter), 18px 6px var(--ink),
+    0 9px var(--ink), 3px 9px var(--peach), 6px 9px var(--butter), 9px 9px var(--rose), 12px 9px var(--butter), 15px 9px var(--peach), 18px 9px var(--ink),
+    0 12px var(--ink), 3px 12px var(--ink), 6px 12px var(--ink), 9px 12px var(--ink), 12px 12px var(--ink), 15px 12px var(--ink), 18px 12px var(--ink);
 }
 
-.hint {
-  font-size: clamp(8px, 1.6vw, 12px);
-  color: var(--brown);
-  opacity: 0.8;
+.btn-relock { background: var(--lilac); }
+.btn-relock:hover { background: var(--lavender); }
+body.relocking .scene { opacity: 0; transition: opacity 400ms steps(4); }
+.btn-reward[aria-disabled="true"] { background: var(--lavender); color: var(--mauve); }
+.btn-reward.is-unlocked { background: var(--bubblegum); animation: glow 1.2s steps(2) infinite; }
+@keyframes glow { 50% { background: var(--butter); } }
+
+/* ------------------------------------------------- reward photo frame */
+.collage-dialog {
+  margin: auto;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  max-width: min(94vw, 980px);
+  max-height: 94dvh;
+  overflow: visible;
+}
+.collage-dialog::backdrop {
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 196, 221, 0.85) 0 12px, rgba(255, 250, 242, 0.85) 12px 24px);
+}
+.collage-dialog[open] { animation: frame-in 450ms steps(5); }
+@keyframes frame-in { from { transform: scale(0.6) translateY(40px); opacity: 0; } }
+
+/* the frame: plum outline, butter "wood" moulding with a bevel, inner plum
+   line, cream mat. Hard edges only — every line is a multiple of 4px. */
+.photo-frame {
+  position: relative;
+  padding: 28px;
+  background: var(--butter);
+  box-shadow:
+    0 0 0 4px var(--ink),
+    inset 4px 4px 0 0 #fff6cf,
+    inset -4px -4px 0 0 var(--peach),
+    inset 0 0 0 12px var(--butter),
+    inset 0 0 0 16px var(--salmon),
+    12px 12px 0 4px rgba(75, 59, 87, 0.3);
+  margin: 12px;
+}
+.frame-mat {
+  background: var(--cream);
+  box-shadow: 0 0 0 4px var(--ink), inset 0 0 0 8px var(--bubblegum);
+  padding: 22px 22px 16px;
+  max-height: calc(94dvh - 150px);
+  overflow-y: auto;
+  scrollbar-color: var(--rose) var(--cream);
+}
+.collage-title {
+  text-align: center;
+  font-size: clamp(12px, 2.4vw, 20px);
+  line-height: 1.5;
+  color: var(--butter);
+  text-shadow:
+    -2px 0 0 var(--ink), 2px 0 0 var(--ink), 0 -2px 0 var(--ink), 0 2px 0 var(--ink),
+    4px 4px 0 var(--rose);
+  margin: 4px 0 18px;
+}
+.collage-note {
+  text-align: center;
+  font-size: 9px;
+  color: var(--mauve);
+  margin-top: 16px;
+}
+.frame-plaque {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+.frame-plaque .btn { margin: 0; }
+
+/* pixel heart in each corner of the moulding (box-shadow pixel art, 4px px) */
+.frame-heart {
+  position: absolute;
+  width: 4px; height: 4px;
+  box-shadow:
+    4px 0 var(--ink), 8px 0 var(--ink), 16px 0 var(--ink), 20px 0 var(--ink),
+    0 4px var(--ink), 4px 4px var(--rose), 8px 4px var(--rose), 12px 4px var(--ink), 16px 4px var(--rose), 20px 4px #fff, 24px 4px var(--ink),
+    0 8px var(--ink), 4px 8px var(--rose), 8px 8px var(--rose), 12px 8px var(--rose), 16px 8px var(--rose), 20px 8px var(--rose), 24px 8px var(--ink),
+    4px 12px var(--ink), 8px 12px var(--rose), 12px 12px var(--rose), 16px 12px var(--rose), 20px 12px var(--ink),
+    8px 16px var(--ink), 12px 16px var(--rose), 16px 16px var(--ink),
+    12px 20px var(--ink);
+}
+.frame-heart.tl { left: -14px; top: -14px; }
+.frame-heart.tr { right: 2px; top: -14px; }
+.frame-heart.bl { left: -14px; bottom: 6px; }
+.frame-heart.br { right: 2px; bottom: 6px; }
+
+/* collage: dense grid of little polaroids, each slightly tilted */
+.collage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-auto-flow: dense;
+  gap: 18px 14px;
+  align-items: start;
+  padding: 4px;
+}
+.polaroid {
+  background: #fff;
+  padding: 6px 6px 20px;
+  box-shadow: 0 0 0 3px var(--ink), 5px 5px 0 3px rgba(75, 59, 87, 0.2);
+  transform: rotate(var(--tilt));
+  animation: pop-in 400ms steps(4) var(--delay) both;
+  transition: transform 120ms steps(2);
+  position: relative;
+}
+.polaroid:hover { transform: rotate(0deg) scale(1.06); z-index: 1; }
+.polaroid.wide { grid-column: span 2; }
+.polaroid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  background: var(--g, #e2d8ee);
+}
+.polaroid.wide img { aspect-ratio: 3 / 2; }
+/* washi-tape strip on top of each photo */
+.polaroid::before {
+  content: "";
+  position: absolute;
+  top: -8px; left: 50%;
+  width: 44px; height: 12px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(255, 196, 221, 0.85);
+  box-shadow: 0 0 0 2px rgba(75, 59, 87, 0.25);
+}
+.polaroid:nth-child(3n+2)::before { background: rgba(173, 224, 255, 0.85); }
+.polaroid:nth-child(3n)::before { background: rgba(255, 234, 160, 0.9); }
+.polaroid.is-gif::after {
+  content: "\25B6  GIF";
+  position: absolute;
+  right: 8px; bottom: 4px;
+  font-size: 7px;
+  color: var(--rose);
+}
+@keyframes pop-in { from { transform: rotate(var(--tilt)) scale(0.3); opacity: 0; } }
+
+@media (max-width: 560px) {
+  .photo-frame { padding: 18px; margin: 8px; }
+  .frame-mat { padding: 14px 12px; }
+  .collage-grid { grid-template-columns: repeat(2, 1fr); gap: 14px 10px; }
+  .polaroid.wide { grid-column: span 2; }
 }
 
-/* Respect reduced motion: JS stops animating; this kills CSS motion too */
+/* reduced motion: JS stops ambient motion; this kills CSS motion too */
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation: none !important;
-    transition: none !important;
-  }
+  * { animation: none !important; transition: none !important; }
 }
